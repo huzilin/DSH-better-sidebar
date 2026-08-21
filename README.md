@@ -42,6 +42,12 @@
   <a href="https://github.com/user-attachments/assets/d4385b7e-aab4-425d-a5c4-2da5da81a34e"><img width="33%" alt="添加插件截图" src="https://github.com/user-attachments/assets/d4385b7e-aab4-425d-a5c4-2da5da81a34e" /></a>
 </div>
 
+### 未发布
+
+**✨ 新功能**
+
+- 👀 **文件变更自动刷新**：侧边栏对每个会话的工作区做文件监听（host 侧 chokidar watcher，按需挂载/卸载）——agent（或任何外部进程）新增 / 删除 / 移动 / 修改文件时，explorer 树自动重列当前可见目录（root + 展开目录），已打开的文件在**无未保存编辑时自动重载**（保留滚动位置与撤销历史）；编辑器带未保存草稿时改显「文件已在磁盘上更改」横幅 + 「从磁盘重新加载」按钮（明确丢弃草稿）；文件被删除 / 重命名时显示「文件已从磁盘删除」横幅（文件回归后可重载）；watcher 随会话切换自动重建、侧边栏关闭时不占用任何文件监听资源
+
 ### v0.14.1
 
 **✨ 新功能**
@@ -245,7 +251,7 @@ pnpm watch        # tsdown --watch
 
 ## ⚠️ 已知限制
 
-- Git 无 push/pull/fetch；无文件 watcher（手动刷新）；工具行内文件打开按钮不可拦截
+- Git 无 push/pull/fetch；工具行内文件打开按钮不可拦截
 - 终端 Tab 拖到另一分栏会重挂载（shell 重开）
 - Office 三件套预览（.docx/.xlsx/.pptx）已移至「推荐插件」（Office 预览插件，见设置页「添加插件」弹窗）；未安装时此类文件走代码/下载查看兜底
 - 浏览器沙箱无登录态/第三方 Cookie 受限，部分站点登录需走弹窗；被 `X-Frame-Options`/`frame-ancestors` 拒绝嵌入的站点（如 arxiv.org）显示原因面板（含「在浏览器中打开」）；iframe 内部跳转不进后退栈

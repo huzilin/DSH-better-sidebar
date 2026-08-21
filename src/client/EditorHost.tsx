@@ -30,6 +30,7 @@ import type { Context } from '../context-types.ts'
 import { api, mediaUrl, type SessionScope } from './api.ts'
 import { BinaryDownload } from './binary-download.tsx'
 import { planFirstMatch, planFsReadOutcome, type EditorLoadAction } from './editor-load.ts'
+import { changeMatchesPath, unlinkCoversPath, useFsEvents } from './fs-events.ts'
 import { baseName } from './FileTree.tsx'
 import { openSidebarFile } from './intercept.tsx'
 import { TreePanel } from './TreePanel.tsx'
@@ -97,6 +98,22 @@ export function EditorHost(props: {
   const path = tab.path ?? ''
   const title = tab.title
   const [load, setLoad] = useState<EditorLoad>({ status: 'loading' })
+  /**
+   * Disk-vs-buffer notice for the open file, driven by the session's
+   * fs-events feed:
+   * - 'ok' — nothing to report;
+   * - 'changed' — the file changed on disk while the editor had UNSAVED
+   *   edits (auto-reload would drop them; the banner offers the explicit
+   *   reload that knowingly discards them);
+   * - 'deleted' — the file was removed (or renamed away) on disk; the banner
+   *   offers a reload in case it comes back.
+   */
+  const [diskNotice, setDiskNotice] = useState<'ok' | 'changed' | 'deleted'>('ok')
+  /** Bump to re-fetch the CURRENT path from the host (external change). */
+  const [reloadTick, setReloadTick] = useState(0)
+  /** The last successfully rendered load — lets a reload skip the "loading"
+   *  flash (the old content stays until the fresh bytes arrive). */
+  const lastReadyRef = useRef<{ path: string } | null>(null)
 
   // Reactive prefs read: flipping editorExplorer re-renders this tab with no
   // reload. The snapshot is the bare boolean so unrelated store churn never
@@ -153,8 +170,15 @@ export function EditorHost(props: {
   // its state and registers its commands (both null/absent for viewers
   // without a toolbar — image, pdf, binary download).
   const [toolbar, setToolbar] = useState<EditorToolbarState | null>(null)
+  /** Live mirror of the toolbar (the fs listener reads dirty at event time). */
+  const toolbarRef = useRef<EditorToolbarState | null>(null)
+  toolbarRef.current = toolbar
   const controlsRef = useRef<EditorToolbarControls | null>(null)
   const onToolbarState = useCallback((next: EditorToolbarState) => {
+    // A successful save makes the disk content equal to the buffer again: a
+    // pending "changed on disk" notice is stale after that (the write's own
+    // events are suppressed host-side, so no new feed burst clears it).
+    if (next.saveState === 'saved') setDiskNotice(prev => prev === 'changed' ? 'ok' : prev)
     setToolbar(prev => prev !== null && JSON.stringify(prev) === JSON.stringify(next) ? prev : next)
   }, [])
   const onToolbarControls = useCallback((controls: EditorToolbarControls | null) => {
@@ -191,8 +215,11 @@ export function EditorHost(props: {
 
   useEffect(() => {
     // A (re)load or a path-less tab clears any hoisted toolbar state — the
-    // fresh viewer re-registers its own.
+    // fresh viewer re-registers its own. A path/session switch also clears a
+    // stale disk notice (the new file's state is unknown until its next
+    // burst).
     setToolbar(null)
+    setDiskNotice('ok')
     // The seeded home tab (no path) never loads a viewer — the empty-state
     // hint renders until the user picks a file.
     if (showEmpty) return
@@ -200,7 +227,13 @@ export function EditorHost(props: {
     // Aborts the matched viewer's `load` when the editor tears down (tab
     // closed, path changed, session switched) or re-matches the viewer.
     const controller = new AbortController()
-    setLoad({ status: 'loading' })
+    // A RELOAD of the same path (fs-events burst) keeps the last rendered
+    // content on screen while the fresh bytes fetch — no "loading" flash and
+    // no unmount of the CodeMirror/preview surface (scroll, undo history and
+    // the dirty draft survive the refetch). First load and path switches
+    // still go through the plain loading state.
+    const silent = reloadTick > 0 && lastReadyRef.current?.path === path
+    if (!silent) setLoad({ status: 'loading' })
     const mediaUrlOf = (): string => mediaUrl(scope, path)
     const apply = (action: EditorLoadAction): void => {
       if (cancelled) return
@@ -209,6 +242,7 @@ export function EditorHost(props: {
           setLoad({ status: 'binary' })
           return
         case 'render':
+          lastReadyRef.current = { path }
           setLoad({
             status: 'ready',
             viewer: action.viewer,
@@ -221,6 +255,7 @@ export function EditorHost(props: {
         case 'customLoad':
           void action.viewer.load?.(path, scope, controller.signal).then((data) => {
             if (cancelled) return
+            lastReadyRef.current = { path }
             setLoad({ status: 'ready', viewer: action.viewer, customData: data })
           }).catch((error: unknown) => {
             if (cancelled) return
@@ -247,7 +282,35 @@ export function EditorHost(props: {
     }
     apply(planFirstMatch(ctx.betterSidebar?.matchFileViewer(path), mediaUrlOf))
     return () => { cancelled = true; controller.abort() }
-  }, [scope.sessionId, scope.cwd, path, ctx, showEmpty])
+    // reloadTick is the fs-events re-fetch trigger; the run resets toolbar and
+    // disk notice, so both stay in the cleanup-free effect body above.
+  }, [scope.sessionId, scope.cwd, path, ctx, showEmpty, reloadTick])
+
+  // The fs-events subscription for THIS open file: an external change of the
+  // exact path auto-reloads when the editor is clean (silent re-fetch); with
+  // unsaved edits it arms the "changed on disk" banner instead of dropping
+  // the draft; an unlink (file deleted or moved away) arms the deleted
+  // banner and never auto-reloads (the read would only fail). The event
+  // handler reads the live toolbar through the ref, so subscription can stay
+  // keyed on the path alone.
+  useFsEvents(scope, (batch) => {
+    if (path === '') return
+    for (const event of batch.events) {
+      if (unlinkCoversPath(event, path)) {
+        setDiskNotice('deleted')
+        return
+      }
+      if (changeMatchesPath(event, path)) {
+        if (toolbarRef.current?.dirty === true) {
+          setDiskNotice('changed')
+        } else {
+          setDiskNotice('ok')
+          setReloadTick(tick => tick + 1)
+        }
+        return
+      }
+    }
+  })
 
   const treeOpen = treeOpenOf(tab)
   /** Persist the panel flag on the tab (survives reloads with the layout). */
@@ -326,6 +389,23 @@ export function EditorHost(props: {
           <IconFolderOpen16 size={14} />
         </button>
       </div>
+      {diskNotice !== 'ok' && (
+        <div className={css.editorDiskBanner} role="status">
+          <span>{diskNotice === 'deleted' ? t('fileDeletedOnDisk') : t('fileChangedOnDisk')}</span>
+          <button
+            type="button"
+            className={css.editorDiskBannerButton}
+            onClick={() => {
+              // Explicit recovery: discard the stale buffer (or retry the
+              // deleted file) and re-fetch from disk.
+              setDiskNotice('ok')
+              setReloadTick(tick => tick + 1)
+            }}
+          >
+            {t('reloadFromDisk')}
+          </button>
+        </div>
+      )}
       <div className={css.editorBody}>
         <div className={css.editorMain}>
           {showEmpty && <div className={css.editorPlaceholder}>{t('editorEmptyHint')}</div>}

@@ -1293,6 +1293,43 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   background: var(--dsw-alias-state-warn-tertiary);
 }
 
+/* The "changed / deleted on disk" strip between the editor header and the
+   body: the file the tab shows was modified or removed OUTSIDE the sidebar.
+   While the editor has unsaved edits a changed-file notice is the safe
+   middle ground — auto-reload would silently drop the draft, so the strip
+   offers the explicit reload that knowingly discards it. */
+.editorDiskBanner {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 12px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+  font: var(--dsw-font-xxxs-11);
+  color: var(--dsw-alias-state-warn-label);
+  background: var(--dsw-alias-state-warn-tertiary);
+}
+
+.editorDiskBannerButton {
+  margin-left: auto;
+  flex: none;
+  padding: 2px 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 5px;
+  background: var(--dsw-alias-bg-layer-2);
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-xxxs-strong-11);
+  cursor: pointer;
+  transition:
+    background var(--ds-transition-duration-slow) var(--ds-ease-in-out),
+    border-color var(--ds-transition-duration-slow) var(--ds-ease-in-out);
+}
+
+.editorDiskBannerButton:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+  border-color: var(--dsw-alias-border-l2);
+}
+
 /* Live sandbox status row (HTML preview / browser tab): GREEN while the
    sandbox is on (with the one-tap temporary unlock), RED while it is off
    (global setting or temporary unlock) — the red state is the persistent

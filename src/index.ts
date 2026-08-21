@@ -31,6 +31,7 @@ import {
 import { isWithin, parentOf, requireAbsolute, listDirectory, rootLabel } from './fs-tree.ts'
 import { writeWorkspaceUpload } from './fs-operations.ts'
 import { searchFiles } from './fs-search.ts'
+import { FsWatchHub } from './fs-watch.ts'
 import { decodeHtmlUrl } from './html-route.ts'
 import { extractFrameAncestors } from './browser-probe.ts'
 import { isTrustedApiRequest, isLoopbackHostname } from './trust-fence.ts'
@@ -220,6 +221,7 @@ function buildApi(
   resolved: ResolvedSidebarConfig,
   terminalShell: string,
   getSettings: () => SidebarSettingsFace | undefined,
+  fsWatchHub: FsWatchHub,
 ): Record<string, ApiMethod> {
   const cwdOf = (payload: unknown): { sessionId: string; cwd: string } => {
     const sessionId = requireString(payload, 'sessionId')
@@ -262,7 +264,7 @@ function buildApi(
       return { kind: 'text', content, truncated }
     },
     'fs.write': async (payload) => {
-      const { cwd } = cwdOf(payload)
+      const { sessionId, cwd } = cwdOf(payload)
       const path = requireAbsolute(requireString(payload, 'path'))
       const content = requireString(payload, 'content')
       const tmp = `${path}.dsh-sidebar-tmp-${process.pid}`
@@ -274,6 +276,10 @@ function buildApi(
         await rm(tmp, { force: true }).catch(() => {})
         throw new SidebarError('fs-error', `cannot write "${path}": ${error instanceof Error ? error.message : String(error)}`, 400)
       }
+      // The rename's own fs events must not bounce into a spurious editor
+      // reload or tree refresh — the watcher hub drops them for a short
+      // window (the temp sibling's events are ignored by the watcher itself).
+      fsWatchHub.noteOwnWrite(sessionId, path)
       return { ok: true }
     },
     'git.status': async (payload) => {
@@ -518,6 +524,10 @@ export function apply(ctx: Context, config?: SidebarConfig): void {
   const agentPtyRegistry = nodePty !== null
     ? new AgentPtyRegistry(terminalShell, resolved.shellArgs, nodePty)
     : null
+  // The fs-events watcher hub: session-keyed chokidar watchers + the
+  // /sidebar/ws/fs-events broadcast (tree + editor auto-refresh on file
+  // changes that happen outside the sidebar). One hub per activation.
+  const fsWatchHub = new FsWatchHub()
 
   // ── User-facing "Side card" preferences ──────────────────────────────────
   // Register the namespace with the settings provider so the Settings page
@@ -591,7 +601,7 @@ export function apply(ctx: Context, config?: SidebarConfig): void {
   })
 
   // ── JSON API ────────────────────────────────────────────────────────────
-  const api = buildApi(ctx, ptyManager, agentPtyRegistry, resolved, terminalShell, () => settingsFace)
+  const api = buildApi(ctx, ptyManager, agentPtyRegistry, resolved, terminalShell, () => settingsFace, fsWatchHub)
   ctx.effect(() => ctx.webServer.register({
     kind: 'prefix',
     path: '/sidebar/api',
@@ -829,13 +839,69 @@ export function apply(ctx: Context, config?: SidebarConfig): void {
     },
   }), 'dsh-better-sidebar: agent-terminals push WebSocket')
 
+  // ── Filesystem-events push WebSocket ───────────────────────────────────
+  // Pushes debounced fs change bursts for one session's workspace to the
+  // sidebar view (see fs-watch.ts). The client refreshes the explorer tree
+  // and reloads the open editor from this feed, so files the AGENT (or any
+  // external process) writes/creates/removes show up without a manual
+  // refresh. The hub keyed by sessionId keeps one chokidar watcher per
+  // session while at least one socket is attached; watchers close with the
+  // last detach, and the whole hub tears down with the plugin.
+  const fsWatchWss = new WebSocketServer({ noServer: true })
+  ctx.effect(() => ctx.webServer.registerUpgrade({
+    path: '/sidebar/ws/fs-events',
+    handler: (req, socket, head) => {
+      if (!fence(req)) {
+        socket.destroy()
+        return
+      }
+      fsWatchWss.handleUpgrade(req as unknown as IncomingMessage, socket as unknown as Duplex, head as Buffer, (ws) => {
+        void attachFsEvents(ctx, fsWatchHub, ws, req)
+      })
+    },
+  }), 'dsh-better-sidebar: fs-events push WebSocket')
+
   ctx.effect(() => () => {
     toolsDisposers?.()
     ptyManager?.disposeAll()
     agentPtyRegistry?.disposeAll()
+    fsWatchHub.stopAll()
     wss.close()
     agentListWss.close()
+    fsWatchWss.close()
   }, 'dsh-better-sidebar: teardown')
+}
+
+/**
+ * Attach one sidebar view socket to the fs-events feed of a session: the
+ * hub starts (or reuses) the session's chokidar watcher and streams debounced
+ * change bursts to this socket until it closes. The client's own summary cwd
+ * rides in the query so an attach during session hydration still lands on the
+ * right workspace root.
+ */
+async function attachFsEvents(
+  ctx: Context,
+  hub: FsWatchHub,
+  ws: WebSocket,
+  req: SidebarHttpRequest,
+): Promise<void> {
+  try {
+    const url = new URL(req.url ?? '/', 'http://dsh.internal')
+    const sessionId = url.searchParams.get('sessionId')
+    if (sessionId === null) {
+      ws.close(1008, 'sessionId is required')
+      return
+    }
+    const clientCwd = url.searchParams.get('cwd') ?? undefined
+    const cwd = sessionCwdOf(ctx, sessionId, clientCwd)
+    hub.attach(sessionId, cwd, ws)
+    ws.send(JSON.stringify({ type: 'ready' }))
+    const detach = (): void => { hub.detach(ws) }
+    ws.on('close', detach)
+    ws.on('error', detach)
+  } catch (error) {
+    ws.close(1011, error instanceof Error ? error.message : String(error))
+  }
 }
 
 /** Push the live agent-terminal list for one session to a connected sidebar view. */

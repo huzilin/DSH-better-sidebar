@@ -20,6 +20,7 @@ import clsx from 'clsx'
 import { IconFolderOpen16, IconRefreshOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import { api } from './api.ts'
 import { FileTree } from './FileTree.tsx'
+import { treeVisibleImpact, useFsEvents } from './fs-events.ts'
 import { IconUploadOutline16 } from './icons.tsx'
 import { t } from './locales.ts'
 import { resolveSidebarPath } from './produced-files.ts'
@@ -143,6 +144,19 @@ export function TreePanel(props: {
   }, [sessionId, cwd, needle])
 
   const busy = upload !== null
+
+  // Auto-refresh from the session's fs-events feed: when a burst touches a
+  // listing the tree currently shows (the workspace root or an expanded
+  // directory — files created/removed/moved by the agent, a git checkout,
+  // any external editor), wipe the level cache and reload the visible set,
+  // exactly like the manual refresh button. The host already debounces and
+  // coalesces events, so this fires at most once per burst; events outside
+  // the visible set (writes in unexpanded subtrees) leave the tree alone.
+  useFsEvents({ sessionId, cwd }, (batch) => {
+    if (treeVisibleImpact(batch.events, cwd, expanded)) {
+      setRefreshTick(tick => tick + 1)
+    }
+  })
 
   return (
     <div className={clsx(css.editorTreePanel, full === true && css.editorTreePanelFull)}>

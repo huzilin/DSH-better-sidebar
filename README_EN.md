@@ -41,6 +41,12 @@
   <a href="https://github.com/user-attachments/assets/d4385b7e-aab4-425d-a5c4-2da5da81a34e"><img width="45%" alt="Add Plugins screenshot" src="https://github.com/user-attachments/assets/d4385b7e-aab4-425d-a5c4-2da5da81a34e" /></a>
 </div>
 
+### Unreleased
+
+**✨ New features**
+
+- 👀 **Auto-refresh on file changes**: the sidebar watches each session's workspace (host-side chokidar watcher, attached on demand) — when the agent or any external process creates / removes / moves / edits files, the explorer re-lists its visible directories (workspace root + expanded dirs), and the open file **auto-reloads when there are no unsaved edits** (keeping scroll position and undo history). With a dirty buffer the editor shows a "File changed on disk" banner with a "Reload from disk" button that knowingly discards the draft; a deleted/renamed file shows a "File deleted from disk" banner (reloadable once the file returns). Watchers rebuild on session switch and watch nothing while the sidebar is closed.
+
 ### v0.14.1
 
 **✨ New features**
@@ -276,7 +282,7 @@ pnpm watch        # tsdown --watch
 
 ## ⚠️ Known Limitations
 
-- Git has no push/pull/fetch; no file watcher (manual refresh); tool inline file-open buttons cannot be intercepted
+- Git has no push/pull/fetch; tool inline file-open buttons cannot be intercepted
 - Dragging a terminal tab to another pane remounts it (shell restarts)
 - Office-suite preview (.docx/.xlsx/.pptx) moved to the recommended office plugin (see the "Add plugins" modals in settings); without it these files fall through to the code/download fallbacks
 - Browser sandbox has no login state / third-party cookies are restricted; some sites need popup login; sites that refuse embedding via `X-Frame-Options`/`frame-ancestors` (e.g. arxiv.org) show a reason panel (with "Open in browser"); in-iframe navigation does not enter the back stack

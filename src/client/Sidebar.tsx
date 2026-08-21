@@ -41,6 +41,7 @@ import {
   type DropZone, type SidebarState, type SidebarStore, type SidebarTab, type SplitNode,
 } from './state.ts'
 import { IconPanelBottomOutline16, IconPanelRightOutline16 } from './icons.tsx'
+import { unlinkedExpandedDirs, useFsEvents } from './fs-events.ts'
 import { Workbench, type WorkbenchActions } from './split-pane.tsx'
 import { useNarrowViewport } from './breakpoints.ts'
 import { parseDesktopEnv } from './desktop-env.ts'
@@ -385,6 +386,21 @@ export function Sidebar(props: { ctx: Context; store: SidebarStore }) {
       socket?.close()
     }
   }, [sessionId, store])
+
+  // Filesystem-events pruning: when the fs feed reports an expanded directory
+  // was removed (or renamed away), drop it from the session's expansion set —
+  // otherwise the tree would keep auto-expanding a ghost subtree under the
+  // removed path. File-level deletions inside a dir are the TREE panel's job
+  // (it re-lists on the same feed); here only the expansion STATE is pruned.
+  // The listener always runs the latest closure, so the current store and
+  // snapshot are read at dispatch time, not subscription time.
+  useFsEvents(sessionId === undefined ? undefined : { sessionId, cwd }, (batch) => {
+    store.reduce((s) => {
+      const removals = unlinkedExpandedDirs(batch.events, s.expanded)
+      if (removals.length === 0) return s
+      return { ...s, expanded: s.expanded.filter(dir => !removals.includes(dir)) }
+    })
+  })
 
   /**
    * Subagent auto-activation: the moment the current conversation spawns its
