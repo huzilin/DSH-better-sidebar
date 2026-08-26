@@ -131,7 +131,7 @@ interface TabDescriptor {
   title: string | (() => string)
   /** 图标：ReactNode 或 (size: number) => ReactNode */
   icon?: ReactNode | ((size: number) => ReactNode)
-  /** + 菜单排序（升序）；默认 100。内置：editor=10, git=20, subagent=30, terminal=40, browser=50 */
+  /** + 菜单排序（升序）；默认 100。内置：editor=10, git=20, subagent=30, sidechat=35, terminal=40, wayfinder=45, browser=50 */
   order?: number
   /** 从 + 菜单隐藏（editor/diff 用：由其他流程触发打开，不在菜单里） */
   hidden?: boolean
@@ -355,6 +355,7 @@ ctx.effect(() => {
 | `subagent` | 30 | 是 | 否 | 子代理拓扑 |
 | `sidechat` | 35 | 否（createTab 铸造 `sidechat:<uuid>`/按 `meta.threadId` 去重） | 否 | 侧边对话（Codex 风格，**每个对话一个独立 Tab**）：打开 Tab 即自动创建空线程（composer 拥有首条消息，host 侧包裹边界提示 + 创建时停泊的进行中快照，首条消息赢得真实标签并同步 Tab 标题）；线程 = 插件自建子会话（自定义种子继承父会话完整上下文，进行中回合以 `interrupted` 冻结诚实闭合；种子尾部带合法 `subagent/descriptor`——否则 cold 线程在宿主 subagents.list 里是 corrupt 诊断行——SubagentView/subagent-detect 按 `Side: ` 前缀过滤保持拓扑零噪音），`origin:'subagent'` 隐藏于主列表；生命周期走自有 `/sidebar/api/sidechat.*` 路由（`ctx.agents.create/resume` + `agent.followup/cancel` + `sidechat.info` 读 Agent 身份/状态）；头部菜单可切换/重开既有线程（`parkSidechatReopen` + `sidechat:<threadId>` 确定性 id），关闭 Tab 释放 live agent（历史保留）；重开 Tab 经 `collectOwnEvents` 大页回源到种子边界（cold 读会展开 chunk 压缩行，小窗口会丢早期 tool/call 行）；「保存为新会话」= `session.fork` 提升顶层会话（必须方法调用形态，`this` 敏感）。UI 对齐主对话区（用户气泡 `--dsw-specific-bubble`、assistant 通栏 markdown、胶囊 composer + 圆形发送/停止钮、运行扫光状态行）。见 [设计文档](docs/plans/2026-08-20-sidechat-tab-design.md) |
 | `terminal` | 40 | 否 | 否 | 终端（nextTerminal 自增） |
+| `wayfinder` | 45 | 是 | 否 | Wayfinder 规划地图（[rengwu/wayfinder-maps](https://github.com/rengwu/wayfinder-maps)）：iframe 嵌入外部 `wayfinder-maps serve` 查看器（默认 localhost:7777）。插件纯客户端、不起进程：挂载/重新可见时探测端口，服务未运行则显示启动命令（一键复制）+ 重试；可达则挂 iframe（沙箱**含** `allow-same-origin`，因查看器是 ES-module SPA、opaque origin 下 module 脚本无法加载——但仍禁止 `allow-top-navigation`，且保持自身 origin，绝不与 GUI 同源）。URL 可经 `openTab({ path })` / tab.path 持久化自定义 |
 | `browser` | 50 | 否（createTab 铸造 browser:`<n>`，nextBrowser 自增） | 否 | 内嵌网页浏览器（沙箱 iframe；可设置关闭沙箱） |
 | `diff` | -1 | 否（按 id 去重） | 是 | 差异查看（由 GitView 触发） |
 
@@ -705,11 +706,11 @@ function parseCsv(text: string): string[][] { /* ... */ }
 
 better-sidebar 自己的内置 tab 和 viewer 就是参考实现（"吃狗粮"）：
 
-- **`src/client/builtins/`**：6 个内置 tab（editor/git/subagent/terminal/browser/diff）+ 6 个内置 viewer（image/pdf/markdown/html/code/binary-download）的注册代码（tabs.tsx / viewers.tsx / index.ts；Office 预览已迁至推荐插件，见 plugins-viewers.ts）
+- **`src/client/builtins/`**：8 个内置 tab（editor/git/subagent/sidechat/terminal/wayfinder/browser/diff）+ 6 个内置 viewer（image/pdf/markdown/html/code/binary-download）的注册代码（tabs.tsx / viewers.tsx / index.ts；Office 预览已迁至推荐插件，见 plugins-viewers.ts）
 - **`src/client/service.ts`**：`BetterSidebarService` 接口 + `createBetterSidebarService` 工厂实现
 - **`src/client/SideCardSection.tsx`**：声明式设置页（注册表驱动清单 + `settings.toggles` 嵌套设置行：switch/text/number + 持久化）
 - **`tests/service.spec.ts`**：注册表生命周期 / 匹配算法 / dedupe / createTab / 启用态 gating 测试
-- **`tests/builtins.spec.ts`**：内置注册清单断言（7 tab + 6 viewer + 声明式元数据）
+- **`tests/builtins.spec.ts`**：内置注册清单断言（8 tab + 6 viewer + 声明式元数据）
 - **`src/client/plugins-tabs.ts`** / **`src/client/plugins-viewers.ts`**：推荐插件目录（名字/url/简介/安装脚本，分别对应 Tab 注册与文件预览注册），在设置页两个「添加插件」弹窗展示（共享类型在 `plugins-shared.ts`）；插件作者可按扩展点加一条数据（弹窗内「跳转」直达仓库、「复制」把安装命令写入剪贴板，粘贴到 DSH 所在环境的终端执行）——数据完整性由 `tests/plugin-list.spec.ts` 守护
 - **`src/client/FileTree.tsx`** / **`src/client/TreePanel.tsx`** / **`src/fs-search.ts`**：受控文件树组件（纯树体，文件行右键菜单含「在新 Tab 中打开」「在侧边打开」，仅宿主编排提供回调时渲染）/ 树面板（搜索框 + 刷新 + FileTree，文件窗口的内嵌 dock 使用）与 host 侧递归文件名搜索（`fs.search` 路由，预算兜底 + 跳过 `.git`/symlink 目录；测试 `tests/fs-search.spec.ts`、组件测试 `tests/editor-host.spec.tsx`）
 - **`docs/plans/2026-08-11-service-registry-design.md`** / **`docs/plans/2026-08-11-declarative-sidebar-settings-design.md`** / **`docs/plans/2026-08-14-add-plugins-modal-design.md`**：设计文档（含实施偏差记录）

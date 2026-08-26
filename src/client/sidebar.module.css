@@ -1473,6 +1473,20 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   background: var(--dsw-alias-interactive-bg-hover);
 }
 
+/* The pasteable start command in the wayfinder "server is not running"
+   notice (also used by the browser embed-refusal panel if it ever needs
+   a command block). */
+.browserBlockedCommand {
+  max-width: 280px;
+  padding: 4px 10px;
+  border-radius: 6px;
+  background: var(--dsw-alias-bg-base);
+  border: 1px solid var(--dsw-alias-border-l1);
+  color: var(--dsw-alias-label-primary);
+  font: var(--dsw-font-xxxs-11);
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
 .editorCm {
   flex: 1;
   min-height: 0;

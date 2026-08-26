@@ -7,7 +7,7 @@
  * `browser:<n>` the same way (no quota). The editor IS the files window
  * (the old standalone explorer merged into it).
  */
-import { IconBranchOutline16, IconCodeOutline16, IconFolderOpen16, IconNewChatOutline16, IconPanelLeftOutline16, IconThinkOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
+import { IconBranchOutline16, IconCodeOutline16, IconFolderOpen16, IconNewChatOutline16, IconPanelLeftOutline16, IconSparkle16, IconThinkOutline16 } from '@deepseek-ai/dsh-client-ui-primitives'
 import type { Context } from '../../context-types.ts'
 import { allLeaves, isAgentTabId, type SidebarState } from '../state.ts'
 import { t } from '../locales.ts'
@@ -20,6 +20,7 @@ import { SubagentView } from '../SubagentView.tsx'
 import { consumeSidechatSeed, SideChatView, sidechatThreadIdOf } from '../SideChatView.tsx'
 import { api } from '../api.ts'
 import { BrowserView } from '../BrowserView.tsx'
+import { WayfinderView } from '../WayfinderView.tsx'
 import { IconTerminalOutline16, IconDiffOutline16, IconGlobeOutline16 } from '../icons.tsx'
 import { TERMINAL_FONT_SIZE_MAX, TERMINAL_FONT_SIZE_MIN } from '../../prefs-shared.ts'
 import type { ComponentType } from 'react'
@@ -313,6 +314,18 @@ export function builtinTabs(ctx: Context, options: BuiltinTabOptions = {}): read
         patch: { nextBrowser: state.nextBrowser + 1 },
       }),
       component: (props) => <BrowserView {...props} />,
+    },
+    {
+      // The wayfinder planning map (https://github.com/rengwu/wayfinder-maps):
+      // an iframe into the external `wayfinder-maps serve` viewer. One
+      // instance; the view probes the port and offers the start command when
+      // the server is down (see WayfinderView.tsx).
+      id: 'wayfinder',
+      title: () => t('wayfinder'),
+      icon: (size: number) => <IconSparkle16 size={size} />,
+      order: 45,
+      single: true,
+      component: (props) => <WayfinderView {...props} />,
     },
     {
       id: 'diff',
