@@ -1489,6 +1489,36 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
 
 /* ── wayfinder list mode ─────────────────────────────────────────────── */
 
+.wayfinderToggle {
+  flex: none;
+  display: flex;
+  gap: 2px;
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.wayfinderToggleBtn {
+  flex: 1;
+  padding: 3px 0;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--dsw-alias-label-tertiary);
+  font: var(--dsw-font-xxxs-11);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s;
+}
+
+.wayfinderToggleBtn:hover {
+  background: var(--dsw-alias-interactive-bg-hover);
+}
+
+.wayfinderToggleActive {
+  background: var(--dsw-alias-bg-base);
+  color: var(--dsw-alias-label-primary);
+}
+
 .wayfinderList {
   flex: 1;
   min-height: 0;

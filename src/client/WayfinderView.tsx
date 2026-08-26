@@ -20,6 +20,7 @@ import { IconRefreshOutline14, writeClipboard } from '@deepseek-ai/dsh-client-ui
 import { t } from './locales.ts'
 import type { TabComponentProps } from './service.ts'
 import { api, type FsEntry } from './api.ts'
+import { patchTab } from './state.ts'
 import css from './sidebar.module.css'
 
 // ─── Constants ───────────────────────────────────────────────────────────────
@@ -284,12 +285,34 @@ function isHttpUrl(s: string): boolean {
 }
 
 export function WayfinderView(props: TabComponentProps) {
-  const { tab, scope, visible } = props
+  const { tab, scope, visible, store } = props
   const path = tab.path ?? WAYFINDER_DEFAULT_URL
   const isIframe = isHttpUrl(path)
 
+  const switchMode = (toIframe: boolean): void => {
+    store.reduce(state => patchTab(state, tab.id, {
+      path: toIframe ? WAYFINDER_DEFAULT_URL : (scope.cwd ? `${scope.cwd}/.plan` : '.plan'),
+    }))
+  }
+
   return (
     <div className={css.browser}>
+      <div className={css.wayfinderToggle}>
+        <button
+          type="button"
+          className={`${css.wayfinderToggleBtn} ${isIframe ? css.wayfinderToggleActive : ''}`}
+          onClick={() => switchMode(true)}
+        >
+          🌐 {t('wayfinderToggleMap')}
+        </button>
+        <button
+          type="button"
+          className={`${css.wayfinderToggleBtn} ${!isIframe ? css.wayfinderToggleActive : ''}`}
+          onClick={() => switchMode(false)}
+        >
+          📋 {t('wayfinderToggleList')}
+        </button>
+      </div>
       {isIframe ? (
         <IframeMode url={path} visible={visible} />
       ) : (
