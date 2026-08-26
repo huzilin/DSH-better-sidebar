@@ -119,19 +119,17 @@ function TicketRow({ ticket, planDir, scope }: { ticket: ParsedTicket; planDir: 
 
 export function PlanView(props: TabComponentProps) {
   const { scope } = props
-  const defaultDir = scope.cwd ? `${scope.cwd}/.plan` : '.plan'
+  const planDir = scope.cwd ? `${scope.cwd}/.plan` : '.plan'
 
   const [mapRaw, setMapRaw] = useState<string | null>(null)
   const [tickets, setTickets] = useState<ParsedTicket[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
-  const [effectiveDir, setEffectiveDir] = useState(defaultDir)
-  const [input, setInput] = useState('')
 
-  const load = useCallback(async (dir: string) => {
+  const load = useCallback(async () => {
     setLoading(true); setError(null)
     try {
-      const res = await loadPlan(scope, dir)
+      const res = await loadPlan(scope, planDir)
       if (!res) { setError('empty'); setLoading(false); return }
       setMapRaw(res.mapRaw)
       setTickets(res.tickets)
@@ -140,9 +138,9 @@ export function PlanView(props: TabComponentProps) {
     } finally {
       setLoading(false)
     }
-  }, [scope])
+  }, [scope, planDir])
 
-  useEffect(() => { void load(effectiveDir) }, [load, effectiveDir])
+  useEffect(() => { void load() }, [load])
 
   const destination = useMemo(() => {
     if (!mapRaw) return null
@@ -165,29 +163,7 @@ export function PlanView(props: TabComponentProps) {
   }
 
   if (loading) return <div className={css.browserStart}>{t('wayfinderChecking')}</div>
-  if (error) return (
-    <div className={css.browserStart} style={{ flexDirection: 'column', gap: 8 }}>
-      <div style={{ color: 'var(--dsw-alias-label-secondary)', fontSize: 12 }}>
-        {tickets.length === 0 ? t('wayfinderListEmpty') : t('wayfinderListPathHint')}
-      </div>
-      <div style={{ display: 'flex', gap: 4 }}>
-        <input
-          className={css.wayfinderPathInput}
-          placeholder="/path/to/.plan"
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          onKeyDown={e => { if (e.key === 'Enter' && input.trim()) setEffectiveDir(input.trim()) }}
-        />
-        <button
-          type="button"
-          className={css.browserBlockedButton}
-          onClick={() => { if (input.trim()) setEffectiveDir(input.trim()) }}
-        >
-          {t('wayfinderRetry')}
-        </button>
-      </div>
-    </div>
-  )
+  if (error) return <div className={css.browserStart}>{t('wayfinderListEmpty')}</div>
 
   return (
     <div className={css.wayfinderList}>
@@ -195,7 +171,7 @@ export function PlanView(props: TabComponentProps) {
       {statusOrder.filter(s => groups[s].length > 0).map(s => (
         <div key={s} className={css.wayfinderGroup}>
           <div className={css.wayfinderGroupTitle}>{statusLabels[s]} ({groups[s].length})</div>
-          {groups[s].map(t => <TicketRow key={t.file} ticket={t} planDir={effectiveDir} scope={scope} />)}
+          {groups[s].map(t => <TicketRow key={t.file} ticket={t} planDir={planDir} scope={scope} />)}
         </div>
       ))}
       {tickets.length === 0 && !loading && (
