@@ -158,22 +158,24 @@ function ListView({ scope, planDir }: { scope: TabComponentProps['scope']; planD
   const [tickets, setTickets] = useState<ParsedTicket[]>([])
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [effectiveDir, setEffectiveDir] = useState(planDir)
+  const [input, setInput] = useState('')
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (dir: string) => {
     setLoading(true); setError(null)
     try {
-      const res = await loadPlan(scope, planDir)
-      if (!res) { setError(t('wayfinderListEmpty')); setLoading(false); return }
+      const res = await loadPlan(scope, dir)
+      if (!res) { setError('empty'); setLoading(false); return }
       setMapRaw(res.mapRaw)
       setTickets(res.tickets)
-    } catch (e: unknown) {
-      setError(String(e))
+    } catch {
+      setError('failed')
     } finally {
       setLoading(false)
     }
-  }, [scope, planDir])
+  }, [scope])
 
-  useEffect(() => { void load() }, [load])
+  useEffect(() => { void load(effectiveDir) }, [load, effectiveDir])
 
   // Extract Destination from map.md (simple: line after `## Destination` up to next heading)
   const destination = useMemo(() => {
@@ -198,7 +200,29 @@ function ListView({ scope, planDir }: { scope: TabComponentProps['scope']; planD
   }
 
   if (loading) return <div className={css.browserStart}>{t('wayfinderChecking')}</div>
-  if (error) return <div className={css.browserStart} style={{ color: 'var(--dsw-alias-label-secondary)', maxWidth: 280, textAlign: 'center', lineHeight: 1.5 }}>{t('wayfinderListPathHint')}</div>
+  if (error) return (
+    <div className={css.browserStart} style={{ flexDirection: 'column', gap: 8 }}>
+      <div style={{ color: 'var(--dsw-alias-label-secondary)', fontSize: 12 }}>
+        {tickets.length === 0 ? t('wayfinderListEmpty') : t('wayfinderListPathHint')}
+      </div>
+      <div style={{ display: 'flex', gap: 4 }}>
+        <input
+          className={css.wayfinderPathInput}
+          placeholder="/path/to/.plan"
+          value={input}
+          onChange={e => setInput(e.target.value)}
+          onKeyDown={e => { if (e.key === 'Enter' && input.trim()) setEffectiveDir(input.trim()) }}
+        />
+        <button
+          type="button"
+          className={css.browserBlockedButton}
+          onClick={() => { if (input.trim()) setEffectiveDir(input.trim()) }}
+        >
+          {t('wayfinderRetry')}
+        </button>
+      </div>
+    </div>
+  )
 
   return (
     <div className={css.wayfinderList}>
