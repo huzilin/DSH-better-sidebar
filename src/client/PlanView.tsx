@@ -135,18 +135,18 @@ function TicketRow({ ticket, planDir, scope }: { ticket: ParsedTicket; planDir: 
 
 export function PlanView(props: TabComponentProps) {
   const { scope } = props
-  const planDir = scope.cwd ? `${scope.cwd}/.plan` : '.plan'
 
   const [mapRaw, setMapRaw] = useState<string | null>(null)
   const [tickets, setTickets] = useState<ParsedTicket[]>([])
-  const [effortDir, setEffortDir] = useState(planDir)
+  const [effortDir, setEffortDir] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
   const load = useCallback(async () => {
     setLoading(true); setError(null)
+    const dir = scope.cwd ? `${scope.cwd}/.plan` : '.plan'
     try {
-      const res = await loadPlan(scope, planDir)
+      const res = await loadPlan(scope, dir)
       if (!res) { setError('empty'); setLoading(false); return }
       setMapRaw(res.mapRaw)
       setTickets(res.tickets)
@@ -156,7 +156,7 @@ export function PlanView(props: TabComponentProps) {
     } finally {
       setLoading(false)
     }
-  }, [scope, planDir])
+  }, [scope.sessionId, scope.cwd])
 
   useEffect(() => { void load() }, [load])
 
