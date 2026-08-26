@@ -198,7 +198,7 @@ function ListView({ scope, planDir }: { scope: TabComponentProps['scope']; planD
   }
 
   if (loading) return <div className={css.browserStart}>{t('wayfinderChecking')}</div>
-  if (error) return <div className={css.browserStart} style={{ color: 'var(--dsw-alias-state-error-primary)' }}>{error}</div>
+  if (error) return <div className={css.browserStart} style={{ color: 'var(--dsw-alias-label-secondary)', maxWidth: 280, textAlign: 'center', lineHeight: 1.5 }}>{t('wayfinderListPathHint')}</div>
 
   return (
     <div className={css.wayfinderList}>
@@ -289,10 +289,34 @@ export function WayfinderView(props: TabComponentProps) {
   const path = tab.path ?? WAYFINDER_DEFAULT_URL
   const isIframe = isHttpUrl(path)
 
-  const switchMode = (toIframe: boolean): void => {
-    store.reduce(state => patchTab(state, tab.id, {
-      path: toIframe ? WAYFINDER_DEFAULT_URL : (scope.cwd ? `${scope.cwd}/.plan` : '.plan'),
-    }))
+  const switchMode = async (toIframe: boolean): Promise<void> => {
+    if (toIframe) {
+      store.reduce(state => patchTab(state, tab.id, { path: WAYFINDER_DEFAULT_URL }))
+      return
+    }
+    // Probe cwd/.plan before switching; fall back to cwd if absent.
+    const planDir = scope.cwd ? `${scope.cwd}/.plan` : '.plan'
+    try {
+      const res = await api.fsTree(scope, planDir)
+      if (res.entries.some((e: FsEntry) => e.name === 'map.md')) {
+        store.reduce(state => patchTab(state, tab.id, { path: planDir }))
+        return
+      }
+    } catch { /* probe failed */ }
+    // No .plan found in cwd — try one level up (common: project root above cwd).
+    if (scope.cwd) {
+      const parent = scope.cwd.replace(/\/[^/]+$/, '')
+      const parentPlan = `${parent}/.plan`
+      try {
+        const res = await api.fsTree(scope, parentPlan)
+        if (res.entries.some((e: FsEntry) => e.name === 'map.md')) {
+          store.reduce(state => patchTab(state, tab.id, { path: parentPlan }))
+          return
+        }
+      } catch { /* no luck */ }
+    }
+    // Still no .plan — switch anyway with a helpful path hint.
+    store.reduce(state => patchTab(state, tab.id, { path: planDir }))
   }
 
   return (
@@ -301,14 +325,14 @@ export function WayfinderView(props: TabComponentProps) {
         <button
           type="button"
           className={`${css.wayfinderToggleBtn} ${isIframe ? css.wayfinderToggleActive : ''}`}
-          onClick={() => switchMode(true)}
+          onClick={() => void switchMode(true)}
         >
           🌐 {t('wayfinderToggleMap')}
         </button>
         <button
           type="button"
           className={`${css.wayfinderToggleBtn} ${!isIframe ? css.wayfinderToggleActive : ''}`}
-          onClick={() => switchMode(false)}
+          onClick={() => void switchMode(false)}
         >
           📋 {t('wayfinderToggleList')}
         </button>
