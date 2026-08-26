@@ -1527,7 +1527,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font: var(--dsw-font-sm-14);
+  font: var(--dsw-font-md-16);
 }
 
 .wayfinderDestination {
@@ -1547,7 +1547,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
 
 .wayfinderGroupTitle {
   padding: 2px 0;
-  font: var(--dsw-font-xs-13);
+  font: var(--dsw-font-md-16);
   color: var(--dsw-alias-label-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1595,7 +1595,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--dsw-font-sm-14);
+  font: var(--dsw-font-md-16);
 }
 
 .wayfinderTicketMeta {
@@ -1609,7 +1609,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   border-radius: 4px;
   background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-tertiary);
-  font: var(--dsw-font-xxs-12);
+  font: var(--dsw-font-xs-13);
 }
 
 .wayfinderClaimedBy {
@@ -1617,7 +1617,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   border-radius: 4px;
   background: var(--dsw-alias-state-warn-tertiary);
   color: var(--dsw-alias-state-warn-label);
-  font: var(--dsw-font-xxs-12);
+  font: var(--dsw-font-xs-13);
 }
 
 .wayfinderTicketBody {
