@@ -7,6 +7,7 @@
  * current session's `cwd/.plan/`.
  */
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import { MarkdownText, writeClipboard } from '@deepseek-ai/dsh-client-ui-primitives'
 import { t } from './locales.ts'
 import type { TabComponentProps } from './service.ts'
 import { api, type FsEntry } from './api.ts'
@@ -126,7 +127,7 @@ function TicketRow({ ticket, planDir, scope }: { ticket: ParsedTicket; planDir: 
       </button>
       {expanded && body ? (
         <div className={css.wayfinderTicketBody}>
-          <pre className={css.wayfinderTicketPre}>{body.split('\n').slice(0, 60).join('\n')}</pre>
+          <MarkdownText text={body} codeLabels={{ copyLabel: t('copy'), copiedLabel: t('copied') }} />
         </div>
       ) : null}
     </div>

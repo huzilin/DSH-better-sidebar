@@ -1527,7 +1527,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   display: flex;
   flex-direction: column;
   gap: 16px;
-  font: var(--dsw-font-xxxs-11);
+  font: var(--dsw-font-sm-14);
 }
 
 .wayfinderDestination {
@@ -1547,7 +1547,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
 
 .wayfinderGroupTitle {
   padding: 2px 0;
-  font: var(--dsw-font-xxs-strong-12);
+  font: var(--dsw-font-xs-13);
   color: var(--dsw-alias-label-tertiary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -1595,7 +1595,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  font: var(--dsw-font-xxs-12);
+  font: var(--dsw-font-sm-14);
 }
 
 .wayfinderTicketMeta {
@@ -1609,7 +1609,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   border-radius: 4px;
   background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-tertiary);
-  font: var(--dsw-font-xxxs-11);
+  font: var(--dsw-font-xxs-12);
 }
 
 .wayfinderClaimedBy {
@@ -1617,39 +1617,12 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   border-radius: 4px;
   background: var(--dsw-alias-state-warn-tertiary);
   color: var(--dsw-alias-state-warn-label);
-  font: var(--dsw-font-xxxs-11);
+  font: var(--dsw-font-xxs-12);
 }
 
 .wayfinderTicketBody {
   border-top: 1px solid var(--dsw-alias-border-l1);
   padding: 8px 10px;
-}
-
-.wayfinderTicketPre {
-  margin: 0;
-  white-space: pre-wrap;
-  word-break: break-word;
-  font: var(--dsw-font-xxxs-11);
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  color: var(--dsw-alias-label-secondary);
-  line-height: 1.5;
-}
-
-.wayfinderPathInput {
-  flex: 1;
-  min-width: 0;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--dsw-alias-border-l1);
-  border-radius: 6px;
-  background: var(--dsw-alias-bg-layer-1);
-  color: var(--dsw-alias-label-primary);
-  font: var(--dsw-font-xxxs-11);
-}
-
-.wayfinderPathInput:focus {
-  outline: none;
-  border-color: var(--dsw-alias-border-l2);
 }
 
 .editorCm {
