@@ -67,10 +67,26 @@ function displayStatus(t: ParsedTicket): TicketStatus {
 async function loadPlan(scope: TabComponentProps['scope'], planDir: string): Promise<{
   mapRaw: string
   tickets: ParsedTicket[]
+  effortDir: string
 } | null> {
+  // Scan .plan/ for a subdirectory containing map.md (effort layer).
+  // If .plan/map.md exists directly, use planDir itself.
+  let effortDir = planDir
+  const rootTree = await api.fsTree(scope, planDir)
+  const hasDirectMap = rootTree.entries.some((e: FsEntry) => e.name === 'map.md' && !e.isDir)
+  if (!hasDirectMap) {
+    const subdirs = rootTree.entries.filter((e: FsEntry) => e.isDir)
+    for (const d of subdirs) {
+      const subTree = await api.fsTree(scope, d.path)
+      if (subTree.entries.some((e: FsEntry) => e.name === 'map.md' && !e.isDir)) {
+        effortDir = d.path
+        break
+      }
+    }
+  }
   const [mapRes, treeRes] = await Promise.all([
-    api.fsRead(scope, `${planDir}/map.md`),
-    api.fsTree(scope, `${planDir}/tickets`),
+    api.fsRead(scope, `${effortDir}/map.md`),
+    api.fsTree(scope, `${effortDir}/tickets`),
   ])
   const mapRaw = mapRes.kind === 'text' ? mapRes.content : ''
   const mdFiles = treeRes.entries.filter((e: FsEntry) => e.name.endsWith('.md') && !e.isDir)
@@ -78,7 +94,7 @@ async function loadPlan(scope: TabComponentProps['scope'], planDir: string): Pro
     mdFiles.map((e: FsEntry) => api.fsRead(scope, e.path).then(r => r.kind === 'text' ? r.content : '')),
   )
   const tickets = mdFiles.map((e: FsEntry, i: number) => deriveTicketStatus(e.name, raws[i] ?? ''))
-  return { mapRaw, tickets }
+  return { mapRaw, tickets, effortDir }
 }
 
 // ─── Components ──────────────────────────────────────────────────────────────
@@ -123,6 +139,7 @@ export function PlanView(props: TabComponentProps) {
 
   const [mapRaw, setMapRaw] = useState<string | null>(null)
   const [tickets, setTickets] = useState<ParsedTicket[]>([])
+  const [effortDir, setEffortDir] = useState(planDir)
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -133,6 +150,7 @@ export function PlanView(props: TabComponentProps) {
       if (!res) { setError('empty'); setLoading(false); return }
       setMapRaw(res.mapRaw)
       setTickets(res.tickets)
+      setEffortDir(res.effortDir)
     } catch {
       setError('failed')
     } finally {
@@ -171,7 +189,7 @@ export function PlanView(props: TabComponentProps) {
       {statusOrder.filter(s => groups[s].length > 0).map(s => (
         <div key={s} className={css.wayfinderGroup}>
           <div className={css.wayfinderGroupTitle}>{statusLabels[s]} ({groups[s].length})</div>
-          {groups[s].map(t => <TicketRow key={t.file} ticket={t} planDir={planDir} scope={scope} />)}
+          {groups[s].map(t => <TicketRow key={t.file} ticket={t} planDir={effortDir} scope={scope} />)}
         </div>
       ))}
       {tickets.length === 0 && !loading && (
