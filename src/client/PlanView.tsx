@@ -41,8 +41,8 @@ function parseFrontmatter(raw: string): { fm: Record<string, string>; body: stri
 
 function deriveTicketStatus(file: string, raw: string): ParsedTicket {
   const { fm, body } = parseFrontmatter(raw)
-  const hasAnswer = /^## Answer\s*$/m.test(body) && /^## Answer\s*\n\S/m.test(body)
-  const hasRuledOut = /^## Ruled out\s*$/m.test(body) && /^## Ruled out\s*\n\S/m.test(body)
+  const hasAnswer = /^## Answer\b/m.test(body) && /^## Answer\b[\s\S]*\n\S/m.test(body)
+  const hasRuledOut = /^## Ruled out\b/m.test(body) && /^## Ruled out\b[\s\S]*\n\S/m.test(body)
   const titleMatch = raw.match(/^#\s+(.+)$/m)
   return {
     file,
