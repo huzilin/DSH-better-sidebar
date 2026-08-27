@@ -125,47 +125,43 @@ function layoutGraph(tickets: GraphTicket[]): { nodes: LayoutNode[]; edges: [num
   return { nodes, edges }
 }
 
-// ─── Design tokens ───────────────────────────────────────────────────────────
+// ─── Design tokens (hardcoded for SVG — CSS vars don't inherit reliably) ─────
 
 const STATUS_THEME: Record<TicketStatus, {
   stripe: string; bg: string; stroke: string; text: string
-  glow: string; badge: string; badgeBg: string
+  badge: string; badgeBg: string
 }> = {
   open: {
-    stripe: 'var(--dsw-alias-label-secondary)',
-    bg: 'var(--dsw-alias-bg-layer-1)',
-    stroke: 'var(--dsw-alias-border-l1)',
-    text: 'var(--dsw-alias-label-primary)',
-    glow: 'none',
-    badge: 'var(--dsw-alias-label-tertiary)',
-    badgeBg: 'var(--dsw-alias-bg-base)',
+    stripe: '#6b6b8a',
+    bg: '#1e1e36',
+    stroke: '#3a3a5c',
+    text: '#d0d0e0',
+    badge: '#8888aa',
+    badgeBg: '#252540',
   },
   claimed: {
-    stripe: 'var(--dsw-alias-state-warn-primary)',
-    bg: 'var(--dsw-alias-bg-layer-1)',
-    stroke: 'var(--dsw-alias-state-warn-primary)',
-    text: 'var(--dsw-alias-state-warn-label)',
-    glow: '0 0 12px var(--dsw-alias-state-warn-primary)',
-    badge: 'var(--dsw-alias-state-warn-label)',
-    badgeBg: 'var(--dsw-alias-state-warn-tertiary)',
+    stripe: '#f0a500',
+    bg: '#2a2210',
+    stroke: '#f0a500',
+    text: '#f0c860',
+    badge: '#f0a500',
+    badgeBg: '#3a2800',
   },
   resolved: {
-    stripe: 'var(--dsw-alias-state-success-primary)',
-    bg: 'var(--dsw-alias-bg-layer-1)',
-    stroke: 'var(--dsw-alias-state-success-primary)',
-    text: 'var(--dsw-alias-state-success-label)',
-    glow: '0 0 12px var(--dsw-alias-state-success-primary)',
-    badge: 'var(--dsw-alias-state-success-label)',
-    badgeBg: 'var(--dsw-alias-state-success-tertiary)',
+    stripe: '#2ecc71',
+    bg: '#1a2e20',
+    stroke: '#2ecc71',
+    text: '#7ddf9b',
+    badge: '#2ecc71',
+    badgeBg: '#1a3a2a',
   },
   out_of_scope: {
-    stripe: 'var(--dsw-alias-label-tertiary)',
-    bg: 'var(--dsw-alias-bg-layer-2)',
-    stroke: 'var(--dsw-alias-border-l1)',
-    text: 'var(--dsw-alias-label-tertiary)',
-    glow: 'none',
-    badge: 'var(--dsw-alias-label-tertiary)',
-    badgeBg: 'var(--dsw-alias-bg-base)',
+    stripe: '#444466',
+    bg: '#1a1a2e',
+    stroke: '#333355',
+    text: '#666688',
+    badge: '#555577',
+    badgeBg: '#1a1a2e',
   },
 }
 
@@ -272,13 +268,13 @@ function GraphSvg({
         {/* Background grid */}
         <defs>
           <pattern id="pg-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="var(--dsw-alias-border-l1)" strokeWidth="0.3" opacity="0.4" />
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#333355" strokeWidth="0.3" opacity="0.5" />
           </pattern>
           <marker id="pg-arrow" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="var(--dsw-alias-label-secondary)" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#6b6b8a" />
           </marker>
           <marker id="pg-arrow-hl" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="var(--dsw-alias-state-warn-primary)" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#f0a500" />
           </marker>
         </defs>
         <rect width={contentW} height={contentH} fill="url(#pg-grid)" />
@@ -297,7 +293,7 @@ function GraphSvg({
               key={i}
               d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
               fill="none"
-              stroke={active ? 'var(--dsw-alias-state-warn-primary)' : 'var(--dsw-alias-label-secondary)'}
+              stroke={active ? '#f0a500' : '#555577'}
               strokeWidth={active ? 2.5 : 1.5}
               strokeOpacity={dimmed && !active ? 0.2 : 1}
               markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}
@@ -321,11 +317,6 @@ function GraphSvg({
               onClick={(e) => { e.stopPropagation(); onSelect(isSelected ? null : n) }}
               style={{ cursor: 'pointer' }}
             >
-              {/* Glow */}
-              {st.glow !== 'none' && active && (
-                <rect x={n.x - 2} y={n.y - 2} width={n.w + 4} height={n.h + 4} rx="10"
-                  fill="none" stroke={st.stripe} strokeWidth="2" opacity="0.5" />
-              )}
               {/* Card */}
               <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="8"
                 fill={st.bg}
