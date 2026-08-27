@@ -11,6 +11,7 @@ import { MarkdownText, writeClipboard } from '@deepseek-ai/dsh-client-ui-primiti
 import { t } from './locales.ts'
 import type { TabComponentProps } from './service.ts'
 import { api, type FsEntry } from './api.ts'
+import { PlanGraphView } from './PlanGraphView.tsx'
 import css from './sidebar.module.css'
 
 // ─── Frontmatter parsing (lightweight, per TRACKER-MARKDOWN) ──────────────────
@@ -142,6 +143,7 @@ export function PlanView(props: TabComponentProps) {
   const [effortDir, setEffortDir] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [loading, setLoading] = useState(true)
+  const [viewMode, setViewMode] = useState<'list' | 'graph'>('list')
 
   const load = useCallback(async () => {
     setLoading(true); setError(null)
@@ -185,16 +187,38 @@ export function PlanView(props: TabComponentProps) {
   if (error) return <div className={css.browserStart}>{t('wayfinderListEmpty')}</div>
 
   return (
-    <div className={css.wayfinderList}>
-      {destination && <div className={css.wayfinderDestination}>{destination}</div>}
-      {statusOrder.filter(s => groups[s].length > 0).map(s => (
-        <div key={s} className={css.wayfinderGroup}>
-          <div className={css.wayfinderGroupTitle}>{statusLabels[s]} ({groups[s].length})</div>
-          {groups[s].map(t => <TicketRow key={t.file} ticket={t} planDir={effortDir} scope={scope} />)}
+    <div className={css.browser}>
+      <div className={css.wayfinderToggle}>
+        <button
+          type="button"
+          className={`${css.wayfinderToggleBtn} ${viewMode === 'list' ? css.wayfinderToggleActive : ''}`}
+          onClick={() => setViewMode('list')}
+        >
+          📋 {t('wayfinderToggleList')}
+        </button>
+        <button
+          type="button"
+          className={`${css.wayfinderToggleBtn} ${viewMode === 'graph' ? css.wayfinderToggleActive : ''}`}
+          onClick={() => setViewMode('graph')}
+        >
+          📊 {t('planToggleGraph')}
+        </button>
+      </div>
+      {viewMode === 'list' ? (
+        <div className={css.wayfinderList}>
+          {destination && <div className={css.wayfinderDestination}>{destination}</div>}
+          {statusOrder.filter(s => groups[s].length > 0).map(s => (
+            <div key={s} className={css.wayfinderGroup}>
+              <div className={css.wayfinderGroupTitle}>{statusLabels[s]} ({groups[s].length})</div>
+              {groups[s].map(t => <TicketRow key={t.file} ticket={t} planDir={effortDir} scope={scope} />)}
+            </div>
+          ))}
+          {tickets.length === 0 && (
+            <div className={css.browserStart}>{t('wayfinderListEmpty')}</div>
+          )}
         </div>
-      ))}
-      {tickets.length === 0 && !loading && (
-        <div className={css.browserStart}>{t('wayfinderListEmpty')}</div>
+      ) : (
+        <PlanGraphView tickets={tickets} />
       )}
     </div>
   )

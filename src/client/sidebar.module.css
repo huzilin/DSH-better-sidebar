@@ -1631,6 +1631,39 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   padding: 8px 10px;
 }
 
+/* ── wayfinder plan graph ──────────────────────────────────────────── */
+
+.planGraphContainer {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.planGraphSvg {
+  flex-shrink: 0;
+  padding: 8px;
+}
+
+.planGraphLegend {
+  display: flex;
+  gap: 16px;
+  padding: 8px 16px;
+  font: var(--dsw-font-xs-13);
+  font-size: 12px;
+  color: var(--dsw-alias-label-secondary);
+  flex-wrap: wrap;
+  border-top: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+}
+
+.planGraphLegendItem {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
 .editorCm {
   flex: 1;
   min-height: 0;
