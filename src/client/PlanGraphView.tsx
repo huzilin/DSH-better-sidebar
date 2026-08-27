@@ -268,6 +268,10 @@ function GraphSvg({
           </marker>
         </defs>
         <rect width={contentW} height={contentH} fill="url(#pg-grid)" />
+      {/* Debug: show byId keys and edge count */}
+      <text x="10" y="20" fill="yellow" fontSize="12">
+        nodes={[...byId.keys()].join(',')} edges={edges.length} contentW={contentW}
+      </text>
 
         {/* Edges — rendered BEFORE nodes so nodes sit on top */}
         {edges.map(([from, to], i) => {
