@@ -271,7 +271,7 @@ function GraphSvg({
             <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2a2a4e" strokeWidth="0.4" opacity="0.6" />
           </pattern>
           <marker id="pg-arrow" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#8888cc" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#aaaadd" />
           </marker>
           <marker id="pg-arrow-hl" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
             <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffcc44" />
@@ -293,8 +293,8 @@ function GraphSvg({
               key={`e${i}`}
               d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
               fill="none"
-              stroke={active ? '#ffcc44' : '#8888cc'}
-              strokeWidth={active ? 3 : 2}
+              stroke={active ? '#ffcc44' : '#aaaadd'}
+              strokeWidth={active ? 4 : 3}
               strokeOpacity={dimmed && !active ? 0.3 : 1}
               markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}
               style={{ transition: 'stroke-opacity 0.15s, stroke 0.15s' }}
@@ -331,9 +331,9 @@ function GraphSvg({
               {/* Type badge — right-aligned, vertically centered */}
               {n.ticket.type && (
                 <>
-                  <rect x={n.x + n.w - 54} y={n.y + (n.h - 20) / 2} width={46} height={20} rx="4"
+                  <rect x={n.x + n.w - 56} y={n.y + 12} width={48} height={20} rx="4"
                     fill={TYPE_COLORS[n.ticket.type] ?? '#888'} opacity="0.2" />
-                  <text x={n.x + n.w - 31} y={n.y + n.h / 2 + 1}
+                  <text x={n.x + n.w - 32} y={n.y + 22}
                     fill={TYPE_COLORS[n.ticket.type] ?? '#888'}
                     fontSize="10" fontWeight="600" textAnchor="middle" dominantBaseline="middle">
                     {n.ticket.type}
