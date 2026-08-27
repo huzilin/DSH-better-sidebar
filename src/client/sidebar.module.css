@@ -1639,7 +1639,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #0e0e22;
+  background: #08081a;
 }
 
 .planGraphSvg {
