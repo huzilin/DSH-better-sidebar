@@ -271,7 +271,7 @@ function GraphSvg({
             <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2a2a4e" strokeWidth="0.4" opacity="0.6" />
           </pattern>
           <marker id="pg-arrow" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#aaaadd" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffffff" />
           </marker>
           <marker id="pg-arrow-hl" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
             <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffcc44" />
@@ -293,7 +293,7 @@ function GraphSvg({
               key={`e${i}`}
               d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
               fill="none"
-              stroke={active ? '#ffcc44' : '#aaaadd'}
+              stroke={active ? '#ffcc44' : '#ffffff'}
               strokeWidth={active ? 4 : 3}
               strokeOpacity={dimmed && !active ? 0.3 : 1}
               markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}
