@@ -1,11 +1,11 @@
 /**
  * Lightweight SVG dependency graph for .plan/ wayfinder tickets.
  *
- * Features: topological layering layout, status-colored nodes, zoom/pan
- * (mouse wheel + drag), click-to-select detail panel, gradient arrows,
- * grid background, hover highlight. Zero external dependencies.
+ * Visual style: hand-drawn look with colored borders by ticket type,
+ * icons, clean arrows, Start/Destination labels, and fog nodes.
+ * Zero external dependencies.
  */
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useMemo, useRef, useState } from 'react'
 import { t } from './locales.ts'
 import css from './sidebar.module.css'
 
@@ -46,20 +46,13 @@ interface LayoutNode {
   layer: number
 }
 
-const NODE_PAD_X = 16
-const NODE_PAD_Y = 8
-const NODE_MIN_W = 160
-const NODE_MAX_W = 260
-const NODE_H = 44
-const LAYER_GAP_X = 80
-const NODE_GAP_Y = 20
-const PADDING = 48
-
-function measureNodeWidth(label: string): number {
-  // Approximate: ~7.5px per char for 13px font + padding + badge + stripe
-  const textW = Math.min(label.length * 7.5 + NODE_PAD_X * 2 + 60, NODE_MAX_W)
-  return Math.max(textW, NODE_MIN_W)
-}
+const NODE_W = 220
+const NODE_H = 48
+const LAYER_GAP_X = 100
+const NODE_GAP_Y = 72
+const PADDING = 60
+const TOP_LABEL_H = 80
+const BOTTOM_LABEL_H = 60
 
 function layoutGraph(tickets: GraphTicket[]): { nodes: LayoutNode[]; edges: [number, number][] } {
   const byNum = new Map<number, GraphTicket>()
@@ -97,246 +90,148 @@ function layoutGraph(tickets: GraphTicket[]): { nodes: LayoutNode[]; edges: [num
     layers.get(L)!.push(n)
   }
 
-  // Assign coordinates with variable-width nodes.
+  // Assign coordinates.
   const nodes: LayoutNode[] = []
-  const layerX = new Map<number, number>()
   let curX = PADDING
-
   for (const [L, nums] of [...layers.entries()].sort((a, b) => a[0] - b[0])) {
     nums.sort((a, b) => a - b)
-    let maxW = 0
-    let curY = PADDING
+    let curY = TOP_LABEL_H + PADDING
     for (const n of nums) {
       const ticket = byNum.get(n)
       if (!ticket) continue
-      const label = `${ticketNum(ticket.file)} · ${ticket.title}`
-      const w = measureNodeWidth(label)
-      if (w > maxW) maxW = w
       nodes.push({
-        id: n, x: curX, y: curY, w, h: NODE_H,
+        id: n, x: curX, y: curY, w: NODE_W, h: NODE_H,
         ticket, status: displayStatus(ticket), layer: L,
       })
       curY += NODE_H + NODE_GAP_Y
     }
-    layerX.set(L, curX)
-    curX += maxW + LAYER_GAP_X
+    curX += NODE_W + LAYER_GAP_X
   }
 
   return { nodes, edges }
 }
 
-// ─── Design tokens (hardcoded for SVG — CSS vars don't inherit reliably) ─────
+// ─── Design tokens ───────────────────────────────────────────────────────────
 
-const STATUS_THEME: Record<TicketStatus, {
-  stripe: string; bg: string; stroke: string; text: string
-  badge: string; badgeBg: string
-}> = {
-  open: {
-    stripe: '#8888bb',
-    bg: '#2e2e58',
-    stroke: '#5a5a8a',
-    text: '#e8e8ff',
-    badge: '#aaaacc',
-    badgeBg: '#222244',
-  },
-  claimed: {
-    stripe: '#ffbb33',
-    bg: '#4a3a10',
-    stroke: '#ffbb33',
-    text: '#ffe880',
-    badge: '#ffbb33',
-    badgeBg: '#4a3a10',
-  },
-  resolved: {
-    stripe: '#44dd88',
-    bg: '#1e4830',
-    stroke: '#44dd88',
-    text: '#bbffcc',
-    badge: '#44dd88',
-    badgeBg: '#1e4830',
-  },
-  out_of_scope: {
-    stripe: '#555577',
-    bg: '#222244',
-    stroke: '#444466',
-    text: '#7777aa',
-    badge: '#6666aa',
-    badgeBg: '#1a1a30',
-  },
+const TYPE_THEME: Record<string, { icon: string; color: string }> = {
+  research: { icon: '🔍', color: '#7c6bff' },
+  grilling: { icon: '🔥', color: '#ff6b6b' },
+  prototype: { icon: '🛠️', color: '#ffa94d' },
+  task: { icon: '⚡', color: '#ff922b' },
+}
+const DEFAULT_TYPE = { icon: '?', color: '#888' }
+
+const STATUS_FILLS: Record<TicketStatus, string> = {
+  open: '#1a1a2e',
+  claimed: '#1a1a2e',
+  resolved: '#1a2e1a',
+  out_of_scope: '#1a1a1a',
 }
 
-const TYPE_COLORS: Record<string, string> = {
-  research: '#7c6bff', grilling: '#f0a500', prototype: '#2ecc71', task: '#888',
-}
+// ─── SVG rendering ───────────────────────────────────────────────────────────
 
-// ─── Detail panel ────────────────────────────────────────────────────────────
-
-function DetailPanel({ node, onClose }: { node: LayoutNode; onClose: () => void }) {
-  const t = STATUS_THEME[node.status]
-  const label = `${ticketNum(node.ticket.file)} · ${node.ticket.title}`
-  return (
-    <div className={css.planGraphDetail}>
-      <div className={css.planGraphDetailHeader}>
-        <span className={`${css.wayfinderStatusDot} ${css[`wayfinderStatus_${node.status}`]}`} />
-        <span className={css.planGraphDetailTitle}>{label}</span>
-        <button type="button" className={css.wayfinderToggleBtn} onClick={onClose}>✕</button>
-      </div>
-      <div className={css.planGraphDetailMeta}>
-        {node.ticket.type && <span className={css.wayfinderTypeBadge}>{node.ticket.type}</span>}
-        {node.ticket.claimedBy && <span className={css.wayfinderClaimedBy}>{node.ticket.claimedBy}</span>}
-        <span className={css.wayfinderTypeBadge}>layer {node.layer}</span>
-      </div>
-    </div>
-  )
-}
-
-// ─── SVG rendering with zoom/pan ────────────────────────────────────────────
-
-function GraphSvg({
-  nodes, edges, onSelect, selectedId,
-}: {
-  nodes: LayoutNode[]; edges: [number, number][]
-  onSelect: (node: LayoutNode | null) => void; selectedId: number | null
-}) {
-  const svgRef = useRef<SVGSVGElement>(null)
+function GraphSvg({ nodes, edges }: { nodes: LayoutNode[]; edges: [number, number][] }) {
   const [hovered, setHovered] = useState<number | null>(null)
-  const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [dragging, setDragging] = useState(false)
-  const dragStart = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
-
   const byId = useMemo(() => new Map(nodes.map(n => [n.id, n])), [nodes])
 
   const contentW = nodes.length > 0 ? Math.max(...nodes.map(n => n.x + n.w)) + PADDING : 400
-  const contentH = nodes.length > 0 ? Math.max(...nodes.map(n => n.y + n.h)) + PADDING : 200
-
-  // Zoom/pan handlers.
-  const onWheel = useCallback((e: React.WheelEvent) => {
-    e.preventDefault()
-    const delta = e.deltaY > 0 ? 0.9 : 1.1
-    setZoom(z => Math.max(0.2, Math.min(3, z * delta)))
-  }, [])
-
-  const onMouseDown = useCallback((e: React.MouseEvent) => {
-    if (e.button !== 0) return
-    setDragging(true)
-    dragStart.current = { x: e.clientX, y: e.clientY, panX: pan.x, panY: pan.y }
-  }, [pan])
-
-  const onMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!dragging) return
-    setPan({
-      x: dragStart.current.panX + (e.clientX - dragStart.current.x),
-      y: dragStart.current.panY + (e.clientY - dragStart.current.y),
-    })
-  }, [dragging])
-
-  const onMouseUp = useCallback(() => setDragging(false), [])
-
-  // Reset view on double-click.
-  const onDblClick = useCallback(() => {
-    setZoom(1); setPan({ x: 0, y: 0 }); onSelect(null)
-  }, [onSelect])
+  const contentH = nodes.length > 0
+    ? TOP_LABEL_H + Math.max(...nodes.map(n => n.y + n.h)) + BOTTOM_LABEL_H + PADDING
+    : 300
 
   const connectedEdges = useMemo(() => {
-    if (hovered === null && selectedId === null) return new Set<number>()
-    const target = hovered ?? selectedId
+    if (hovered === null) return new Set<number>()
     const s = new Set<number>()
-    edges.forEach(([from, to], i) => { if (from === target || to === target) s.add(i) })
+    edges.forEach(([from, to], i) => {
+      if (from === hovered || to === hovered) s.add(i)
+    })
     return s
-  }, [hovered, selectedId, edges])
+  }, [hovered, edges])
 
-  const dimmed = hovered !== null || selectedId !== null
+  const dimmed = hovered !== null
 
   return (
-    <svg
-      ref={svgRef}
-      width={contentW}
-      height={contentH}
-      className={css.planGraphSvg}
-      viewBox={`0 0 ${contentW} ${contentH}`}
-    >
+    <svg width="100%" height="100%" viewBox={`0 0 ${contentW} ${contentH}`} preserveAspectRatio="xMidYMid meet">
+      {/* Background */}
+      <rect width={contentW} height={contentH} fill="#0a0a14" />
+
+      {/* Start label */}
+      <text x={contentW / 2} y="30" textAnchor="middle" fill="#ffffff" fontSize="22" fontWeight="bold" fontFamily="sans-serif">
+        🚩 Start
+      </text>
+      <text x={contentW / 2} y="52" textAnchor="middle" fill="#888" fontSize="11" fontFamily="sans-serif">
+        路径起点 — 从模糊想法到清晰路线
+      </text>
+
+      {/* Destination label */}
+      <text x={contentW / 2} y={contentH - 15} textAnchor="middle" fill="#ffffff" fontSize="22" fontWeight="bold" fontFamily="sans-serif">
+        🚩 Destination
+      </text>
+
+      {/* Edges — straight lines with arrowheads */}
       <defs>
-          <pattern id="pg-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2a2a4e" strokeWidth="0.4" opacity="0.6" />
-          </pattern>
-          <marker id="pg-arrow" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffffff" />
-          </marker>
-          <marker id="pg-arrow-hl" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffcc44" />
-          </marker>
-        </defs>
-        <rect width={contentW} height={contentH} fill="url(#pg-grid)" />
+        <marker id="arrowhead" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#ffffff" />
+        </marker>
+        <marker id="arrowhead-dim" viewBox="0 0 10 10" refX="10" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#444466" />
+        </marker>
+      </defs>
 
-        {/* Edges — rendered BEFORE nodes so nodes sit on top */}
-        {edges.map(([from, to], i) => {
-          const a = byId.get(from)
-          const b = byId.get(to)
-          if (!a || !b) return null
-          const x1 = a.x + a.w; const y1 = a.y + a.h / 2
-          const x2 = b.x; const y2 = b.y + b.h / 2
-          const mx = (x1 + x2) / 2
-          const active = connectedEdges.has(i)
-          return (
-            <path
-              key={`e${i}`}
-              d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
-              fill="none"
-              stroke={active ? '#ffcc44' : '#ffffff'}
-              strokeWidth={active ? 4 : 3}
-              strokeOpacity={dimmed && !active ? 0.3 : 1}
-              markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}
-            />
-          )
-        })}
+      {edges.map(([from, to], i) => {
+        const a = byId.get(from)
+        const b = byId.get(to)
+        if (!a || !b) return null
+        const x1 = a.x + a.w / 2
+        const y1 = a.y + a.h
+        const x2 = b.x + b.w / 2
+        const y2 = b.y
+        const isActive = connectedEdges.has(i)
+        return (
+          <line
+            key={`e${i}`}
+            x1={x1} y1={y1} x2={x2} y2={y2}
+            stroke={isActive ? '#ffffff' : dimmed ? '#333355' : '#666688'}
+            strokeWidth={isActive ? 2.5 : 1.8}
+            markerEnd={isActive ? 'url(#arrowhead)' : 'url(#arrowhead-dim)'}
+          />
+        )
+      })}
 
-        {/* Nodes */}
-        {nodes.map(n => {
-          const st = STATUS_THEME[n.status]
-          const label = `${ticketNum(n.ticket.file)} · ${n.ticket.title}`
-          const isHovered = hovered === n.id
-          const isSelected = selectedId === n.id
-          const active = isHovered || isSelected
-          return (
-            <g
-              key={n.id}
-              onMouseEnter={() => setHovered(n.id)}
-              onMouseLeave={() => setHovered(null)}
-              onClick={(e) => { e.stopPropagation(); onSelect(isSelected ? null : n) }}
-              style={{ cursor: 'pointer' }}
-            >
-              {/* Card */}
-              <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="8"
-                fill={st.bg}
-                stroke={active ? st.stripe : st.stroke}
-                strokeWidth={active ? 2 : 1}
-                opacity={dimmed && !active ? 0.4 : 1}
-                style={{ transition: 'opacity 0.15s, stroke 0.15s, stroke-width 0.15s' }}
-              />
-              {/* Left stripe */}
-              <rect x={n.x} y={n.y} width={5} height={n.h} rx="8" ry="8" fill={st.stripe} />
-              <rect x={n.x + 3} y={n.y} width={2} height={n.h} fill={st.stripe} />
-              {/* Type badge — right-aligned, vertically centered */}
-              {n.ticket.type && (
-                <>
-                  <rect x={n.x + n.w - 56} y={n.y + 12} width={48} height={20} rx="4"
-                    fill={TYPE_COLORS[n.ticket.type] ?? '#888'} opacity="0.2" />
-                  <text x={n.x + n.w - 32} y={n.y + 22}
-                    fill={TYPE_COLORS[n.ticket.type] ?? '#888'}
-                    fontSize="10" fontWeight="600" textAnchor="middle" dominantBaseline="middle">
-                    {n.ticket.type}
-                  </text>
-                </>
-              )}
-              {/* Label — left-aligned, vertically centered */}
-              <text x={n.x + 15} y={n.y + n.h / 2 + 1}
-                fill={st.text} fontSize="13" fontWeight="500" dominantBaseline="middle">
-                {label.length > 22 ? label.slice(0, 21) + '…' : label}
-              </text>
-            </g>
-          )
-        })}
+      {/* Nodes */}
+      {nodes.map(n => {
+        const tt = TYPE_THEME[n.ticket.type ?? ''] ?? DEFAULT_TYPE
+        const fill = STATUS_FILLS[n.status]
+        const isHovered = hovered === n.id
+        const opacity = dimmed && !isHovered ? 0.35 : 1
+        const borderColor = isHovered ? '#ffffff' : tt.color
+        return (
+          <g
+            key={n.id}
+            onMouseEnter={() => setHovered(n.id)}
+            onMouseLeave={() => setHovered(null)}
+            style={{ cursor: 'pointer', opacity, transition: 'opacity 0.15s' }}
+          >
+            {/* Node body */}
+            <rect x={n.x} y={n.y} width={n.w} height={n.h} rx="8" ry="8"
+              fill={fill} stroke={borderColor} strokeWidth={isHovered ? 2.5 : 2} />
+            {/* Icon area (left side) */}
+            <rect x={n.x} y={n.y} width={n.h} height={n.h} rx="8" ry="8"
+              fill={fill} stroke={borderColor} strokeWidth={0} />
+            <text x={n.x + n.h / 2} y={n.y + n.h / 2 + 1} fontSize="18" textAnchor="middle" dominantBaseline="middle">
+              {tt.icon}
+            </text>
+            {/* Ticket number */}
+            <text x={n.x + n.h + 10} y={n.y + 14} fontSize="10" fill="#888" fontFamily="monospace">
+              {ticketNum(n.ticket.file)}
+            </text>
+            {/* Title */}
+            <text x={n.x + n.h + 10} y={n.y + 30} fontSize="13" fontWeight="500" fill="#e0e0f0" fontFamily="sans-serif">
+              {n.ticket.title.length > 18 ? n.ticket.title.slice(0, 17) + '…' : n.ticket.title}
+            </text>
+          </g>
+        )
+      })}
     </svg>
   )
 }
@@ -345,7 +240,6 @@ function GraphSvg({
 
 export function PlanGraphView({ tickets }: { tickets: GraphTicket[] }) {
   const { nodes, edges } = useMemo(() => layoutGraph(tickets), [tickets])
-  const [selected, setSelected] = useState<LayoutNode | null>(null)
 
   if (tickets.length === 0) {
     return <div className={css.browserStart}>{t('wayfinderListEmpty')}</div>
@@ -353,15 +247,14 @@ export function PlanGraphView({ tickets }: { tickets: GraphTicket[] }) {
 
   return (
     <div className={css.planGraphContainer}>
-      <GraphSvg nodes={nodes} edges={edges} onSelect={setSelected} selectedId={selected?.id ?? null} />
-      {selected && <DetailPanel node={selected} onClose={() => setSelected(null)} />}
+      <GraphSvg nodes={nodes} edges={edges} />
       <div className={css.planGraphLegend}>
-        <span className={css.planGraphLegendItem}><span className={`${css.wayfinderStatusDot} ${css.wayfinderStatus_resolved}`} /> resolved</span>
-        <span className={css.planGraphLegendItem}><span className={`${css.wayfinderStatusDot} ${css.wayfinderStatus_claimed}`} /> claimed</span>
-        <span className={css.planGraphLegendItem}><span className={`${css.wayfinderStatusDot} ${css.wayfinderStatus_open}`} /> open</span>
-        <span className={css.planGraphLegendItem}><span className={`${css.wayfinderStatusDot} ${css.wayfinderStatus_out_of_scope}`} /> out of scope</span>
-        <span className={css.planGraphLegendItem} style={{ marginLeft: 8 }}>→ blocked_by</span>
-        <span className={css.planGraphLegendItem} style={{ marginLeft: 8, opacity: 0.6 }}>滚轮缩放 · 拖拽平移 · 点击选中 · 双击重置</span>
+        {Object.entries(TYPE_THEME).map(([type, { icon, color }]) => (
+          <span key={type} className={css.planGraphLegendItem}>
+            <span style={{ color, fontSize: '14px' }}>{icon}</span> {type}
+          </span>
+        ))}
+        <span className={css.planGraphLegendItem}>→ blocked_by</span>
       </div>
     </div>
   )
