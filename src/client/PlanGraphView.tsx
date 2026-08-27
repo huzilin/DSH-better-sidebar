@@ -279,16 +279,18 @@ function GraphSvg({
           const mx = (x1 + x2) / 2
           const active = connectedEdges.has(i)
           return (
-            <path
-              key={`e${i}`}
-              d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
-              fill="none"
-              stroke={active ? '#ffcc44' : '#ffffff'}
-              strokeWidth={active ? 4 : 3}
-              strokeOpacity={dimmed && !active ? 0.3 : 1}
-              markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}
-              style={{ transition: 'stroke-opacity 0.15s, stroke 0.15s' }}
-            />
+            <g key={`e${i}`}>
+              <circle cx={x1} cy={y1} r="6" fill="red" />
+              <circle cx={x2} cy={y2} r="6" fill="blue" />
+              <path
+                d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
+                fill="none"
+                stroke={active ? '#ffcc44' : '#ffffff'}
+                strokeWidth={active ? 4 : 3}
+                strokeOpacity={dimmed && !active ? 0.3 : 1}
+                markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}
+              />
+            </g>
           )
         })}
 
