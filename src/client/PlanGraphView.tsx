@@ -132,36 +132,36 @@ const STATUS_THEME: Record<TicketStatus, {
   badge: string; badgeBg: string
 }> = {
   open: {
-    stripe: '#6b6b8a',
-    bg: '#1e1e36',
-    stroke: '#3a3a5c',
-    text: '#d0d0e0',
-    badge: '#8888aa',
-    badgeBg: '#252540',
+    stripe: '#8888bb',
+    bg: '#282848',
+    stroke: '#5a5a8a',
+    text: '#e0e0f0',
+    badge: '#aaaacc',
+    badgeBg: '#1e1e38',
   },
   claimed: {
-    stripe: '#f0a500',
-    bg: '#2a2210',
-    stroke: '#f0a500',
-    text: '#f0c860',
-    badge: '#f0a500',
-    badgeBg: '#3a2800',
+    stripe: '#ffbb33',
+    bg: '#3a3010',
+    stroke: '#ffbb33',
+    text: '#ffe080',
+    badge: '#ffbb33',
+    badgeBg: '#3a3010',
   },
   resolved: {
-    stripe: '#2ecc71',
-    bg: '#1a2e20',
-    stroke: '#2ecc71',
-    text: '#7ddf9b',
-    badge: '#2ecc71',
-    badgeBg: '#1a3a2a',
+    stripe: '#44dd88',
+    bg: '#1a3828',
+    stroke: '#44dd88',
+    text: '#aaffcc',
+    badge: '#44dd88',
+    badgeBg: '#1a3828',
   },
   out_of_scope: {
-    stripe: '#444466',
-    bg: '#1a1a2e',
-    stroke: '#333355',
-    text: '#666688',
-    badge: '#555577',
-    badgeBg: '#1a1a2e',
+    stripe: '#555577',
+    bg: '#1e1e38',
+    stroke: '#444466',
+    text: '#7777aa',
+    badge: '#6666aa',
+    badgeBg: '#1a1a30',
   },
 }
 
@@ -268,13 +268,13 @@ function GraphSvg({
         {/* Background grid */}
         <defs>
           <pattern id="pg-grid" width="40" height="40" patternUnits="userSpaceOnUse">
-            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#333355" strokeWidth="0.3" opacity="0.5" />
+            <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2a2a4e" strokeWidth="0.4" opacity="0.6" />
           </pattern>
           <marker id="pg-arrow" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#6b6b8a" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#7777aa" />
           </marker>
           <marker id="pg-arrow-hl" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#f0a500" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffbb33" />
           </marker>
         </defs>
         <rect width={contentW} height={contentH} fill="url(#pg-grid)" />
@@ -293,7 +293,7 @@ function GraphSvg({
               key={i}
               d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
               fill="none"
-              stroke={active ? '#f0a500' : '#555577'}
+              stroke={active ? '#ffbb33' : '#7777aa'}
               strokeWidth={active ? 2.5 : 1.5}
               strokeOpacity={dimmed && !active ? 0.2 : 1}
               markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}

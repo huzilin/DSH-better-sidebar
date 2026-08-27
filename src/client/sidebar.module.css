@@ -1639,7 +1639,7 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  background: #12122a;
+  background: #0e0e22;
 }
 
 .planGraphSvg {
@@ -1649,8 +1649,8 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
 }
 
 .planGraphDetail {
-  border-top: 1px solid #333355;
-  background: #1a1a36;
+  border-top: 1px solid #2a2a4e;
+  background: #161630;
   padding: 10px 16px;
 }
 
@@ -1680,10 +1680,10 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
   padding: 8px 16px;
   font: var(--dsw-font-xs-13);
   font-size: 12px;
-  color: #8888aa;
+  color: #8888bb;
   flex-wrap: wrap;
-  border-top: 1px solid #333355;
-  background: #1a1a36;
+  border-top: 1px solid #2a2a4e;
+  background: #161630;
 }
 
 .planGraphLegendItem {
