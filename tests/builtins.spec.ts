@@ -27,10 +27,10 @@ function setup(options: BuiltinTabOptions = {}): { service: ReturnType<typeof cr
 }
 
 describe('built-in tab registrations', () => {
-  it('registers the 9 built-in tabs', () => {
+  it('registers the 8 built-in tabs', () => {
     const { service } = setup()
     expect(service.getTabs().map(t => t.id).sort()).toEqual(
-      ['browser', 'diff', 'editor', 'git', 'plan', 'sidechat', 'subagent', 'terminal', 'wayfinder'],
+      ['browser', 'diff', 'editor', 'git', 'plan', 'sidechat', 'subagent', 'terminal'],
     )
   })
 
@@ -47,14 +47,6 @@ describe('built-in tab registrations', () => {
     for (const id of ['git', 'subagent']) {
       expect(service.getTab(id)?.single).toBe(true)
     }
-  })
-
-  it('the wayfinder tab is a single-instance tab between terminal and browser in the + menu', () => {
-    const { service } = setup()
-    const wayfinder = service.getTab('wayfinder')
-    expect(wayfinder?.order).toBe(45)
-    expect(wayfinder?.hidden).not.toBe(true)
-    expect(wayfinder?.single).toBe(true)
   })
 
   it('the side chat tab sits between tasks and terminal in the + menu', () => {
