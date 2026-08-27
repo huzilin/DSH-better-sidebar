@@ -271,15 +271,15 @@ function GraphSvg({
             <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2a2a4e" strokeWidth="0.4" opacity="0.6" />
           </pattern>
           <marker id="pg-arrow" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#7777aa" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#8888cc" />
           </marker>
           <marker id="pg-arrow-hl" viewBox="0 0 12 8" refX="11" refY="4" markerWidth="10" markerHeight="7" orient="auto">
-            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffbb33" />
+            <path d="M0,1 L10,4 L0,7 L2,4 Z" fill="#ffcc44" />
           </marker>
         </defs>
         <rect width={contentW} height={contentH} fill="url(#pg-grid)" />
 
-        {/* Edges */}
+        {/* Edges — rendered BEFORE nodes so nodes sit on top */}
         {edges.map(([from, to], i) => {
           const a = byId.get(from)
           const b = byId.get(to)
@@ -290,12 +290,12 @@ function GraphSvg({
           const active = connectedEdges.has(i)
           return (
             <path
-              key={i}
+              key={`e${i}`}
               d={`M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`}
               fill="none"
-              stroke={active ? '#ffbb33' : '#7777aa'}
-              strokeWidth={active ? 2.5 : 1.5}
-              strokeOpacity={dimmed && !active ? 0.2 : 1}
+              stroke={active ? '#ffcc44' : '#8888cc'}
+              strokeWidth={active ? 3 : 2}
+              strokeOpacity={dimmed && !active ? 0.3 : 1}
               markerEnd={active ? 'url(#pg-arrow-hl)' : 'url(#pg-arrow)'}
               style={{ transition: 'stroke-opacity 0.15s, stroke 0.15s' }}
             />
@@ -328,22 +328,22 @@ function GraphSvg({
               {/* Left stripe */}
               <rect x={n.x} y={n.y} width={5} height={n.h} rx="8" ry="8" fill={st.stripe} />
               <rect x={n.x + 3} y={n.y} width={2} height={n.h} fill={st.stripe} />
-              {/* Type badge */}
+              {/* Type badge — right-aligned, vertically centered */}
               {n.ticket.type && (
                 <>
-                  <rect x={n.x + n.w - 52} y={n.y + 8} width={44} height={20} rx="4"
-                    fill={TYPE_COLORS[n.ticket.type] ?? '#888'} opacity="0.15" />
-                  <text x={n.x + n.w - 30} y={n.y + n.h / 2 + 1}
+                  <rect x={n.x + n.w - 54} y={n.y + (n.h - 20) / 2} width={46} height={20} rx="4"
+                    fill={TYPE_COLORS[n.ticket.type] ?? '#888'} opacity="0.2" />
+                  <text x={n.x + n.w - 31} y={n.y + n.h / 2 + 1}
                     fill={TYPE_COLORS[n.ticket.type] ?? '#888'}
                     fontSize="10" fontWeight="600" textAnchor="middle" dominantBaseline="middle">
                     {n.ticket.type}
                   </text>
                 </>
               )}
-              {/* Label */}
+              {/* Label — left-aligned, vertically centered */}
               <text x={n.x + 15} y={n.y + n.h / 2 + 1}
                 fill={st.text} fontSize="13" fontWeight="500" dominantBaseline="middle">
-                {label.length > 24 ? label.slice(0, 23) + '…' : label}
+                {label.length > 22 ? label.slice(0, 21) + '…' : label}
               </text>
             </g>
           )
