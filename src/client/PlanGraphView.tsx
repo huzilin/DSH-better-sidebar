@@ -251,22 +251,12 @@ function GraphSvg({
   return (
     <svg
       ref={svgRef}
-      width="100%"
-      height="100%"
+      width={contentW}
+      height={contentH}
       className={css.planGraphSvg}
       viewBox={`0 0 ${contentW} ${contentH}`}
-      preserveAspectRatio="xMidYMid meet"
-      onWheel={onWheel}
-      onMouseDown={onMouseDown}
-      onMouseMove={onMouseMove}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseUp}
-      onDoubleClick={onDblClick}
-      style={{ cursor: dragging ? 'grabbing' : 'grab' }}
     >
-      <g transform={`translate(${pan.x},${pan.y}) scale(${zoom})`}>
-        {/* Background grid */}
-        <defs>
+      <defs>
           <pattern id="pg-grid" width="40" height="40" patternUnits="userSpaceOnUse">
             <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#2a2a4e" strokeWidth="0.4" opacity="0.6" />
           </pattern>
@@ -348,7 +338,6 @@ function GraphSvg({
             </g>
           )
         })}
-      </g>
     </svg>
   )
 }
