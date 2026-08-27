@@ -20,7 +20,6 @@ import { SubagentView } from '../SubagentView.tsx'
 import { consumeSidechatSeed, SideChatView, sidechatThreadIdOf } from '../SideChatView.tsx'
 import { api } from '../api.ts'
 import { BrowserView } from '../BrowserView.tsx'
-import { PlanView } from '../PlanView.tsx'
 import { IconTerminalOutline16, IconDiffOutline16, IconGlobeOutline16 } from '../icons.tsx'
 import { TERMINAL_FONT_SIZE_MAX, TERMINAL_FONT_SIZE_MIN } from '../../prefs-shared.ts'
 import type { ComponentType } from 'react'
@@ -314,17 +313,6 @@ export function builtinTabs(ctx: Context, options: BuiltinTabOptions = {}): read
         patch: { nextBrowser: state.nextBrowser + 1 },
       }),
       component: (props) => <BrowserView {...props} />,
-    },
-    {
-      // Plain list view of .plan/ wayfinder maps — reads map.md + tickets/
-      // via the sidebar fs.read API, derives status per the TRACKER-MARKDOWN
-      // contract. Defaults to cwd/.plan (see PlanView.tsx).
-      id: 'plan',
-      title: () => t('plan'),
-      icon: (size: number) => <IconCodeOutline16 size={size} />,
-      order: 46,
-      single: true,
-      component: (props) => <PlanView {...props} />,
     },
     {
       id: 'diff',

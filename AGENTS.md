@@ -705,7 +705,7 @@ function parseCsv(text: string): string[][] { /* ... */ }
 
 better-sidebar 自己的内置 tab 和 viewer 就是参考实现（"吃狗粮"）：
 
-- **`src/client/builtins/`**：8 个内置 tab（editor/git/subagent/sidechat/terminal/plan/browser/diff）+ 6 个内置 viewer（image/pdf/markdown/html/code/binary-download）的注册代码（tabs.tsx / viewers.tsx / index.ts；Office 预览已迁至推荐插件，见 plugins-viewers.ts）
+- **`src/client/builtins/`**：7 个内置 tab（editor/git/subagent/sidechat/terminal/browser/diff）+ 6 个内置 viewer（image/pdf/markdown/html/code/binary-download）的注册代码（tabs.tsx / viewers.tsx / index.ts；Office 预览已迁至推荐插件，见 plugins-viewers.ts）
 - **`src/client/service.ts`**：`BetterSidebarService` 接口 + `createBetterSidebarService` 工厂实现
 - **`src/client/SideCardSection.tsx`**：声明式设置页（注册表驱动清单 + `settings.toggles` 嵌套设置行：switch/text/number + 持久化）
 - **`tests/service.spec.ts`**：注册表生命周期 / 匹配算法 / dedupe / createTab / 启用态 gating 测试
