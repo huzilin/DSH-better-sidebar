@@ -1636,14 +1636,40 @@ body[data-dsh-sidebar-dragging] .bottomPanel {
 .planGraphContainer {
   flex: 1;
   min-height: 0;
-  overflow: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
 
 .planGraphSvg {
-  flex-shrink: 0;
-  padding: 8px;
+  flex: 1;
+  min-height: 0;
+  user-select: none;
+}
+
+.planGraphDetail {
+  border-top: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-layer-1);
+  padding: 10px 16px;
+}
+
+.planGraphDetailHeader {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.planGraphDetailTitle {
+  flex: 1;
+  font: var(--dsw-font-xs-13);
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.planGraphDetailMeta {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
 }
 
 .planGraphLegend {
