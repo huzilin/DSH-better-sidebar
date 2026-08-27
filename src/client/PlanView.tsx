@@ -49,7 +49,7 @@ function deriveTicketStatus(file: string, raw: string): ParsedTicket {
     file,
     title: titleMatch?.[1]?.replace(/`[^`]*`/g, '')?.trim() ?? file,
     type: fm.type,
-    blockedBy: (fm.blocked_by ?? '').split(/[,\s]+/).map(Number).filter(Boolean),
+    blockedBy: (fm.blocked_by ?? '').replace(/[\[\]]/g, '').split(/[,\s]+/).map(Number).filter(Boolean),
     resolved: hasAnswer,
     outOfScope: hasRuledOut,
     claimedBy: fm.claimed_by,
